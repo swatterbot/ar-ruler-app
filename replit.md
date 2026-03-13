@@ -1,5 +1,22 @@
 # Workspace
 
+## Flutter Android App (AR Линейка)
+
+A Flutter Android app for AR measurement and 3D visualization is stored in `flutter_app/`.
+
+- **Code**: `flutter_app/lib/` — Dart/Flutter source code
+- **Android config**: `flutter_app/android/` — AndroidManifest, build.gradle, etc.
+- **Auto-build**: `.github/workflows/flutter-build.yml` — GitHub Actions workflow that builds the APK automatically on every push to main/master
+- **Instructions**: `КАК_ПОЛУЧИТЬ_APK.md` — step-by-step guide for the user to get the APK
+
+### Flutter App Features (Stages 0-2)
+- Home screen: project list with SQLite persistence
+- AR Scanning screen: ARCore-based point placement, distance measurement, box/cylinder scanning
+- 3D Viewer screen: custom isometric 3D renderer with touch controls
+
+---
+
+
 ## Overview
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.

@@ -23,9 +23,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.ar_ruler"
-    compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdkVersion 33
+    ndkVersion "23.1.7779620"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -42,9 +41,8 @@ android {
 
     defaultConfig {
         applicationId "com.example.ar_ruler"
-        // ARCore requires minSdk 24
         minSdkVersion 24
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }

@@ -346,9 +346,14 @@ class _Scene3DPainter extends CustomPainter {
 
     // Надпись если нет объектов
     if (objects.isEmpty) {
-      const textPainter = TextPainter(
+      final emptyPainter = TextPainter(
+        text: const TextSpan(
+          text: 'Нет объектов',
+          style: TextStyle(color: Colors.white38, fontSize: 16),
+        ),
         textDirection: TextDirection.ltr,
-      );
+      )..layout();
+      emptyPainter.paint(canvas, Offset(size.width / 2 - emptyPainter.width / 2, size.height / 2));
     }
   }
 

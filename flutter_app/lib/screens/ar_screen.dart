@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import 'package:ar_flutter_plugin/datatypes/hittest_result_types.dart';
-import 'package:ar_flutter_plugin/datatypes/node_types.dart';
 import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
 import 'package:ar_flutter_plugin/models/ar_anchor.dart';
 import 'package:ar_flutter_plugin/models/ar_hittest_result.dart';
-import 'package:ar_flutter_plugin/models/ar_node.dart';
-import 'package:vector_math/vector_math_64.dart' show Vector3, Vector4, Matrix4;
-import 'dart:math' as math;
+import 'package:vector_math/vector_math_64.dart' show Vector3, Matrix4;
 import '../database/db_helper.dart';
 import '../models/models.dart';
 
@@ -28,17 +25,12 @@ class _ARScreenState extends State<ARScreen> {
   ARObjectManager? arObjectManager;
   ARAnchorManager? arAnchorManager;
 
-  // Точки для измерения
   final List<Vector3> _points = [];
-  final List<ARNode> _pointNodes = [];
   final List<ARAnchor> _anchors = [];
 
-  // Текущий режим
   ObjectType _selectedType = ObjectType.box;
   bool _isScanning = false;
   double? _lastDistance;
-
-  // Высота объекта (вводится вручную)
   double _height = 1.0;
 
   @override
@@ -77,45 +69,32 @@ class _ARScreenState extends State<ARScreen> {
       orElse: () => results.first,
     );
 
-    final transform = hit.worldTransform;
-    final pos = _extractPosition(transform);
+    final pos = _extractPosition(hit.worldTransform);
 
-    // Добавляем якорь и маркерную сферу
-    final anchor = ARPlaneAnchor(transformation: transform);
+    // Добавляем якорь для стабилизации точки
+    final anchor = ARPlaneAnchor(transformation: hit.worldTransform);
     final didAdd = await arAnchorManager!.addAnchor(anchor);
     if (didAdd != true) return;
 
-    final node = ARNode(
-      type: NodeType.sphere,
-      scale: Vector3(0.05, 0.05, 0.05),
-      position: Vector3(0, 0, 0),
-      rotation: Vector4(1, 0, 0, 0),
-      materials: [{'color': '#58A6FF'}],
-    );
-    await arObjectManager!.addNode(node, planeAnchor: anchor);
-
     setState(() {
       _points.add(pos);
-      _pointNodes.add(node);
       _anchors.add(anchor);
     });
 
-    // Вычисляем расстояние между последними двумя точками
+    // Расстояние между последними двумя точками
     if (_points.length >= 2) {
       final dist = (_points.last - _points[_points.length - 2]).length;
       setState(() => _lastDistance = dist);
     }
 
-    // Автоматически предлагаем сохранить при достижении нужного кол-ва точек
+    // Предлагаем сохранить когда набрали нужное кол-во точек
     int needed = _selectedType == ObjectType.box ? 4 : 2;
     if (_points.length == needed) {
-      _askSaveObject();
+      await _askSaveObject();
     }
   }
 
-  Vector3 _extractPosition(Matrix4 m) {
-    return Vector3(m[12], m[13], m[14]);
-  }
+  Vector3 _extractPosition(Matrix4 m) => Vector3(m[12], m[13], m[14]);
 
   double _calcDistance(Vector3 a, Vector3 b) => (b - a).length;
 
@@ -136,7 +115,11 @@ class _ARScreenState extends State<ARScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_buildDimensionsText(), style: const TextStyle(color: Color(0xFF58A6FF))),
+            Text(
+              _buildDimensionsText(),
+              style: const TextStyle(color: Color(0xFF58A6FF), fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: nameController,
@@ -152,7 +135,7 @@ class _ARScreenState extends State<ARScreen> {
             TextField(
               controller: heightController,
               style: const TextStyle(color: Colors.white),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'Высота объекта (м)',
                 labelStyle: TextStyle(color: Colors.white54),
@@ -190,10 +173,10 @@ class _ARScreenState extends State<ARScreen> {
     if (_selectedType == ObjectType.box && _points.length >= 4) {
       final w = _calcDistance(_points[0], _points[1]);
       final l = _calcDistance(_points[1], _points[2]);
-      return 'Ширина: ${_fmt(w)}м | Длина: ${_fmt(l)}м';
+      return 'Ширина: ${_fmt(w)} м\nДлина: ${_fmt(l)} м';
     } else if (_selectedType == ObjectType.cylinder && _points.length >= 2) {
       final r = _calcDistance(_points[0], _points[1]) / 2;
-      return 'Радиус: ${_fmt(r)}м | Диаметр: ${_fmt(r * 2)}м';
+      return 'Радиус: ${_fmt(r)} м\nДиаметр: ${_fmt(r * 2)} м';
     }
     return '';
   }
@@ -204,11 +187,13 @@ class _ARScreenState extends State<ARScreen> {
       w = _calcDistance(_points[0], _points[1]);
       l = _calcDistance(_points[1], _points[2]);
     } else if (_selectedType == ObjectType.cylinder && _points.length >= 2) {
-      w = _calcDistance(_points[0], _points[1]); // diameter
+      w = _calcDistance(_points[0], _points[1]);
       l = w;
     }
 
-    final center = _points.fold(Vector3.zero(), (sum, p) => sum + p) / _points.length.toDouble();
+    final centerX = _points.map((p) => p.x).reduce((a, b) => a + b) / _points.length;
+    final centerY = _points.map((p) => p.y).reduce((a, b) => a + b) / _points.length;
+    final centerZ = _points.map((p) => p.z).reduce((a, b) => a + b) / _points.length;
 
     await DBHelper.instance.insertObject(ScannedObject(
       projectId: widget.projectId,
@@ -217,15 +202,15 @@ class _ARScreenState extends State<ARScreen> {
       width: w,
       length: l,
       height: height,
-      posX: center.x,
-      posY: center.y,
-      posZ: center.z,
+      posX: centerX,
+      posY: centerY,
+      posZ: centerZ,
     ));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ "$name" сохранён'),
+          content: Text('✅ "${name.isNotEmpty ? name : "Объект"}" сохранён'),
           backgroundColor: const Color(0xFF238636),
         ),
       );
@@ -237,6 +222,10 @@ class _ARScreenState extends State<ARScreen> {
       _points.clear();
       _lastDistance = null;
     });
+    for (final anchor in _anchors) {
+      arAnchorManager?.removeAnchor(anchor);
+    }
+    _anchors.clear();
   }
 
   String _fmt(double v) => v.toStringAsFixed(2);
@@ -266,12 +255,23 @@ class _ARScreenState extends State<ARScreen> {
                     icon: _isScanning ? Icons.stop : Icons.play_arrow,
                     label: _isScanning ? 'Стоп' : 'Начать',
                     color: _isScanning ? Colors.red : const Color(0xFF238636),
-                    onTap: () => setState(() => _isScanning = !_isScanning),
+                    onTap: () => setState(() {
+                      _isScanning = !_isScanning;
+                      if (!_isScanning) _resetPoints();
+                    }),
                   ),
                 ],
               ),
             ),
           ),
+
+          // Прицел по центру
+          if (_isScanning)
+            const Center(
+              child: Icon(Icons.add, color: Colors.white, size: 36, shadows: [
+                Shadow(color: Colors.black, blurRadius: 4),
+              ]),
+            ),
 
           // Нижняя панель
           Positioned(
@@ -280,10 +280,10 @@ class _ARScreenState extends State<ARScreen> {
             right: 0,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
+                color: Colors.black.withAlpha(190),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 36),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -295,20 +295,20 @@ class _ARScreenState extends State<ARScreen> {
                       _typeButton(ObjectType.cylinder, Icons.circle_outlined, 'Цилиндр'),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Статус и инструкция
+                  // Инструкция и индикатор точек
                   _buildStatus(),
                   const SizedBox(height: 12),
 
                   // Расстояние
                   if (_lastDistance != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF58A6FF).withOpacity(0.15),
+                        color: const Color(0xFF58A6FF).withAlpha(38),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF58A6FF).withOpacity(0.3)),
+                        border: Border.all(color: const Color(0xFF58A6FF).withAlpha(76)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -317,7 +317,11 @@ class _ARScreenState extends State<ARScreen> {
                           const SizedBox(width: 8),
                           Text(
                             '${_fmt(_lastDistance!)} м  (${(_lastDistance! * 100).toStringAsFixed(0)} см)',
-                            style: const TextStyle(color: Color(0xFF58A6FF), fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Color(0xFF58A6FF),
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -336,52 +340,47 @@ class _ARScreenState extends State<ARScreen> {
               ),
             ),
           ),
-
-          // Крестик прицела по центру
-          if (_isScanning)
-            const Center(
-              child: Icon(Icons.add, color: Colors.white, size: 32),
-            ),
         ],
       ),
     );
   }
 
   Widget _buildStatus() {
-    int needed = _selectedType == ObjectType.box ? 4 : 2;
-    int placed = _points.length;
+    final needed = _selectedType == ObjectType.box ? 4 : 2;
+    final placed = _points.length;
     String msg;
+
     if (!_isScanning) {
       msg = 'Нажмите "Начать" для сканирования';
     } else if (placed == 0) {
       msg = _selectedType == ObjectType.box
-          ? 'Наведите на пол/стол, тапните по углу 1'
+          ? 'Наведите на пол/стол и тапните по углу 1'
           : 'Тапните по одному краю диаметра';
     } else if (placed < needed) {
       msg = _selectedType == ObjectType.box
           ? 'Тапните по углу ${placed + 1} из $needed'
           : 'Тапните по второму краю диаметра';
     } else {
-      msg = 'Все точки поставлены!';
+      msg = '✅ Все точки поставлены!';
     }
 
     return Column(
       children: [
         Text(msg, style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(needed, (i) {
-            return Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i < placed ? const Color(0xFF58A6FF) : Colors.white24,
-              ),
-            );
-          }),
+          children: List.generate(needed, (i) => Container(
+            width: 14,
+            height: 14,
+            margin: const EdgeInsets.symmetric(horizontal: 5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i < placed ? const Color(0xFF58A6FF) : Colors.white24,
+              border: Border.all(color: i < placed ? const Color(0xFF58A6FF) : Colors.white24),
+            ),
+            child: i < placed ? const Icon(Icons.check, size: 10, color: Colors.white) : null,
+          )),
         ),
       ],
     );
@@ -391,28 +390,27 @@ class _ARScreenState extends State<ARScreen> {
     final selected = _selectedType == type;
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedType = type;
-            _resetPoints();
-          });
-        },
+        onTap: () => setState(() {
+          _selectedType = type;
+          _resetPoints();
+        }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFF58A6FF).withOpacity(0.2) : Colors.white.withOpacity(0.07),
+            color: selected ? const Color(0xFF58A6FF).withAlpha(51) : Colors.white.withAlpha(18),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected ? const Color(0xFF58A6FF) : Colors.white24,
-            ),
+            border: Border.all(color: selected ? const Color(0xFF58A6FF) : Colors.white24),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: selected ? const Color(0xFF58A6FF) : Colors.white54, size: 18),
               const SizedBox(width: 6),
-              Text(label, style: TextStyle(color: selected ? const Color(0xFF58A6FF) : Colors.white54, fontWeight: FontWeight.w600)),
+              Text(label, style: TextStyle(
+                color: selected ? const Color(0xFF58A6FF) : Colors.white54,
+                fontWeight: FontWeight.w600,
+              )),
             ],
           ),
         ),
@@ -426,9 +424,9 @@ class _ARScreenState extends State<ARScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: (color ?? Colors.white).withOpacity(0.15),
+          color: (color ?? Colors.white).withAlpha(38),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: (color ?? Colors.white).withOpacity(0.3)),
+          border: Border.all(color: (color ?? Colors.white).withAlpha(76)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -29,7 +29,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Inject Gradle init script to force Kotlin 1.7.10
+      - name: Inject Gradle init script to force Kotlin 1.9.22
         run: |
           mkdir -p ~/.gradle/init.d
           cat > ~/.gradle/init.d/force_kotlin.gradle << 'EOF'
@@ -37,19 +37,19 @@ jobs:
             buildscript {
               configurations.all {
                 resolutionStrategy {
-                  force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
-                  force "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
-                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"
-                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10"
+                  force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22"
+                  force "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
+                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
                 }
               }
             }
             configurations.all {
               resolutionStrategy {
-                force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
-                force "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
-                force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"
-                force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10"
+                force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22"
+                force "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
               }
             }
           }

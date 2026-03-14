@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -42,10 +43,11 @@
             </intent-filter>
         </activity>
 
-        <!-- ARCore meta-data: required -->
+        <!-- Override ar_flutter_plugin's "optional" with "required" -->
         <meta-data
             android:name="com.google.ar.core"
-            android:value="required" />
+            android:value="required"
+            tools:replace="android:value" />
 
         <meta-data
             android:name="flutterEmbedding"

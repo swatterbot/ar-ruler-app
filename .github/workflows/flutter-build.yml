@@ -29,35 +29,24 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Inject Gradle init script to force Kotlin 1.9.22
-        run: |
-          mkdir -p ~/.gradle/init.d
-          cat > ~/.gradle/init.d/force_kotlin.gradle << 'EOF'
-          allprojects {
-            buildscript {
-              configurations.all {
-                resolutionStrategy {
-                  force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22"
-                  force "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
-                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
-                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
-                }
-              }
-            }
-            configurations.all {
-              resolutionStrategy {
-                force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22"
-                force "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
-                force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
-                force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
-              }
-            }
-          }
-          EOF
-
       - name: Get Flutter dependencies
         working-directory: flutter_app
         run: flutter pub get
+
+      - name: Patch ar_flutter_plugin Kotlin version
+        run: |
+          PLUGIN_BUILD=$(find ~/.pub-cache -path "*/ar_flutter_plugin*/android/build.gradle" | head -1)
+          if [ -n "$PLUGIN_BUILD" ]; then
+            echo "Found plugin at: $PLUGIN_BUILD"
+            sed -i "s/kotlin_version = '1.3.50'/kotlin_version = '1.9.22'/g" "$PLUGIN_BUILD"
+            sed -i "s/\"org.jetbrains.kotlin:kotlin-gradle-plugin:\$kotlin_version\"/\"org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22\"/g" "$PLUGIN_BUILD"
+            sed -i "s/'com.android.tools.build:gradle:[^']*'/'com.android.tools.build:gradle:7.3.0'/g" "$PLUGIN_BUILD"
+            echo "=== Patched build.gradle ==="
+            cat "$PLUGIN_BUILD"
+          else
+            echo "ERROR: ar_flutter_plugin build.gradle not found!"
+            find ~/.pub-cache -name "build.gradle" | grep ar_flutter
+          fi
 
       - name: Analyze code
         working-directory: flutter_app

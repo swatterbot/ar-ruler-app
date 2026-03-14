@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.view_in_ar, size: 80, color: Colors.white.withOpacity(0.2)),
+          Icon(Icons.view_in_ar, size: 80, color: Colors.white.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           const Text('Нет проектов', style: TextStyle(color: Colors.white54, fontSize: 20)),
           const SizedBox(height: 8),
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF58A6FF).withOpacity(0.15),
+                color: const Color(0xFF58A6FF).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.folder_open, color: Color(0xFF58A6FF)),

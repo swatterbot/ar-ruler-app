@@ -125,9 +125,9 @@ class _ViewerScreenState extends State<ViewerScreen> {
                   margin: const EdgeInsets.only(right: 10),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: color.withOpacity(0.4)),
+                    border: Border.all(color: color.withValues(alpha: 0.4)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -189,7 +189,6 @@ class _Scene3DPainter extends CustomPainter {
     final rz = z;
 
     final ry2 = ry * cosX - rz * sinX;
-    final rz2 = ry * sinX + rz * cosX;
 
     return Offset(
       center.dx + rx * unitPx,
@@ -199,7 +198,7 @@ class _Scene3DPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas, Offset center, double unitPx) {
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.08)
+      ..color = Colors.white.withValues(alpha: 0.08)
       ..strokeWidth = 0.5;
 
     for (int i = -5; i <= 5; i++) {
@@ -235,12 +234,12 @@ class _Scene3DPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     // Нижняя грань
-    facePaint.color = color.withOpacity(0.15);
+    facePaint.color = color.withValues(alpha: 0.15);
     canvas.drawPath(_face([vertices[0], vertices[1], vertices[2], vertices[3]]), facePaint);
     canvas.drawPath(_face([vertices[0], vertices[1], vertices[2], vertices[3]]), edgePaint);
 
     // Боковые грани
-    facePaint.color = color.withOpacity(0.25);
+    facePaint.color = color.withValues(alpha: 0.25);
     for (var face in [
       [0, 1, 5, 4],
       [1, 2, 6, 5],
@@ -252,7 +251,7 @@ class _Scene3DPainter extends CustomPainter {
     }
 
     // Верхняя грань
-    facePaint.color = color.withOpacity(0.35);
+    facePaint.color = color.withValues(alpha: 0.35);
     canvas.drawPath(_face([vertices[4], vertices[5], vertices[6], vertices[7]]), facePaint);
     canvas.drawPath(_face([vertices[4], vertices[5], vertices[6], vertices[7]]), edgePaint);
   }
@@ -280,7 +279,7 @@ class _Scene3DPainter extends CustomPainter {
     // Боковая поверхность
     for (int i = 0; i < segments; i++) {
       final next = (i + 1) % segments;
-      facePaint.color = color.withOpacity(0.2);
+      facePaint.color = color.withValues(alpha: 0.2);
       canvas.drawPath(
           _face([botPoints[i], botPoints[next], topPoints[next], topPoints[i]]), facePaint);
       canvas.drawPath(
@@ -293,7 +292,7 @@ class _Scene3DPainter extends CustomPainter {
       topPath.lineTo(p.dx, p.dy);
     }
     topPath.close();
-    facePaint.color = color.withOpacity(0.35);
+    facePaint.color = color.withValues(alpha: 0.35);
     canvas.drawPath(topPath, facePaint);
     canvas.drawPath(topPath, edgePaint);
   }

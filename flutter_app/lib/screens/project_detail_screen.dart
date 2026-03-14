@@ -128,7 +128,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF58A6FF).withOpacity(0.2),
+                    color: const Color(0xFF58A6FF).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text('${_objects.length}', style: const TextStyle(color: Color(0xFF58A6FF), fontSize: 12)),
@@ -156,7 +156,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.category_outlined, size: 64, color: Colors.white.withOpacity(0.15)),
+          Icon(Icons.category_outlined, size: 64, color: Colors.white.withValues(alpha: 0.15)),
           const SizedBox(height: 12),
           const Text('Объекты не добавлены', style: TextStyle(color: Colors.white38, fontSize: 16)),
           const SizedBox(height: 6),
@@ -185,7 +185,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: (isBox ? const Color(0xFF3FB950) : const Color(0xFFF78166)).withOpacity(0.15),
+                color: (isBox ? const Color(0xFF3FB950) : const Color(0xFFF78166)).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(

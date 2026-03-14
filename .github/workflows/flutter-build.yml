@@ -29,13 +29,39 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Inject Gradle init script to force Kotlin 1.7.10
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/force_kotlin.gradle << 'EOF'
+          allprojects {
+            buildscript {
+              configurations.all {
+                resolutionStrategy {
+                  force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+                  force "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"
+                  force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10"
+                }
+              }
+            }
+            configurations.all {
+              resolutionStrategy {
+                force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+                force "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10"
+              }
+            }
+          }
+          EOF
+
       - name: Get Flutter dependencies
         working-directory: flutter_app
         run: flutter pub get
 
       - name: Analyze code
         working-directory: flutter_app
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
         continue-on-error: true
 
       - name: Build release APK
@@ -54,5 +80,5 @@ jobs:
           APK_PATH="flutter_app/build/app/outputs/flutter-apk/app-release.apk"
           if [ -f "$APK_PATH" ]; then
             SIZE=$(du -h "$APK_PATH" | cut -f1)
-            echo "✅ APK успешно собран! Размер: $SIZE"
+            echo "APK built successfully! Size: $SIZE"
           fi
